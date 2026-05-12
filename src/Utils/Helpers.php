@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 use NumberToWords\NumberToWords;
 
 if (!function_exists('create_uuid')) {
@@ -73,8 +71,8 @@ if (!function_exists('array_column_sum')) {
     function array_column_sum(array $array, string $key, ?callable $callback = null, bool $amountFormat = false): float
     {
         $arrayColumn = array_column(($callback ? array_filter($array, $callback) : $array), $key);
-        return array_sum($amountFormat 
-            ? map_with_amount_format($arrayColumn) 
+        return array_sum($amountFormat
+            ? map_with_amount_format($arrayColumn)
             : $arrayColumn);
     }
 }
@@ -130,7 +128,7 @@ if (!function_exists('curdate')) {
 }
 
 if (!function_exists('dd')) {
-    
+
     /**
      * dd
      *
@@ -138,7 +136,13 @@ if (!function_exists('dd')) {
      * @param  boolean $die
      * @return void
      */
-    function dd($var, $die = true){
-        echo '<pre style="background:#000; color:#52eb34;">'; print_r($var); echo '</pre>'; if($die) exit;
+    function dd($var, $die = true)
+    {
+        echo '<pre style="background:#000; color:#52eb34;">';
+        print_r($var);
+        echo '</pre>';
+        if ($die) {
+            exit;
+        }
     }
 }
