@@ -425,7 +425,7 @@ class Gib
         $lastDocument = $this->onlyCurrent()
                              ->setLimit(1)
                              ->sortDesc()
-                             ->getAll(curdate('d/m/Y', '-1 year'), curdate('d/m/Y'));
+                             ->getAll(curdate('d/m/Y', '-7 days'), curdate('d/m/Y'));
 
         return $lastDocument
             ? $this->getDocument($lastDocument[0]['ettn'])
