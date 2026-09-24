@@ -106,6 +106,10 @@ class Client
                 if (!$this->response || isset($this->response['error']) || !empty($this->response['data']['hata'])) {
                     throw new ApiException('İstek başarısız oldu.', $parameters, $this->response, $request->getStatusCode());
                 }
+                // Liste uçları hatayı data[0].error içinde döner (ör. "Seçilen tarih aralığı 7 günden fazla olamaz!")
+                if (!empty($this->response['data'][0]['error'])) {
+                    throw new ApiException((string) $this->response['data'][0]['error'], $parameters, $this->response, $request->getStatusCode());
+                }
             }
         } catch (\GuzzleHttp\Exception\GuzzleException $e) {
             throw new BadResponseException($e->getMessage(), $parameters, null, $e->getCode());

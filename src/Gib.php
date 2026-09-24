@@ -350,21 +350,38 @@ class Gib
         }
 
         if ($isInvoiceCreate) {
-            $createdDocument = $this->getLastDocument();
-            $createdUuid = $createdDocument['ettn'] ?? '';
+            $createdUuid = $this->resolveCreatedDraftUuid($data);
+            $this->setLastId($createdUuid);
 
-            if ($createdUuid !== '') {
-                $this->setLastId($createdUuid);
-
-                if ($model && property_exists($model, 'uuid')) {
-                    $model->uuid = $createdUuid;
-                }
+            if ($model && property_exists($model, 'uuid')) {
+                $model->uuid = $createdUuid;
             }
         } elseif ($model) {
             $this->setLastId($model->getUuid());
         }
 
         return true;
+    }
+
+    /**
+     * resolveCreatedDraftUuid
+     *
+     * Upstream (mlevent/fatura bb66028) ile aynı yaklaşım: son dakikada oluşturulmuş,
+     * aynı alıcıya ait son taslak alınır; bulunamazsa hata fırlatılır.
+     */
+    protected function resolveCreatedDraftUuid(array $data): string
+    {
+        $lastDocument = $this->getLastDocument('-1 minute', $data['vknTckn'] ?? null);
+
+        if (empty($lastDocument)) {
+            throw new ApiException('Fatura GİB üzerinde oluşturuldu ancak ETTN bilgisi alınamadı.', $data);
+        }
+
+        return match ($this->documentType) {
+            DocumentType::Invoice             => $lastDocument['faturaUuid'] ?? $lastDocument['ettn'],
+            DocumentType::ProducerReceipt     => $lastDocument['uuid'] ?? $lastDocument['ettn'],
+            DocumentType::SelfEmployedReceipt => $lastDocument['ettn'],
+        };
     }
 
     /**
@@ -420,12 +437,17 @@ class Gib
     /**
      * getLastDocument
      */
-    public function getLastDocument(): array
+    public function getLastDocument(string $fromModifier = '-7 days', ?string $recipientId = null): array
     {
-        $lastDocument = $this->onlyCurrent()
-                             ->setLimit(1)
-                             ->sortDesc()
-                             ->getAll(curdate('d/m/Y', '-7 days'), curdate('d/m/Y'));
+        $query = $this->onlyCurrent();
+
+        if (!empty($recipientId)) {
+            $query->findRecipientId($recipientId);
+        }
+
+        $lastDocument = $query->setLimit(1)
+                              ->sortDesc()
+                              ->getAll(curdate('d/m/Y', $fromModifier), curdate('d/m/Y'));
 
         return $lastDocument
             ? $this->getDocument($lastDocument[0]['ettn'])
